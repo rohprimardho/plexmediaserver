@@ -1,0 +1,14 @@
+[Unit]
+Description=SickBeard Daemon
+
+[Service]
+User={{ sickbeard_user }}
+Group={{ sickbeard_user }}
+
+Type=forking
+GuessMainPID=no
+ExecStart=/usr/bin/python /opt/sickbeard/SickBeard.py -q --daemon --nolaunch --datadir={{ sickbeard_home }}
+
+[Install]
+WantedBy=multi-user.target
+

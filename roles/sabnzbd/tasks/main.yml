@@ -1,0 +1,81 @@
+---
+
+- name: Download and unpacked yenc and pyopenssl
+  unarchive:
+    src: "{{ item }}"
+    dest: /tmp
+    copy: no
+  with_items:
+    - 'http://www.golug.it/pub/yenc/yenc-0.4.0.tar.gz'
+    - 'https://launchpad.net/pyopenssl/main/0.11/+download/pyOpenSSL-0.11.tar.gz'
+
+
+- name: Build and install
+  command: python setup.py "{{ item.command }}"
+  args:
+    chdir: "/tmp/{{ item.dir }}"
+  with_items:
+    - { command: 'build', dir: 'yenc-0.4.0' }
+    - { command: 'install', dir: 'yenc-0.4.0' }
+    - { command: 'build', dir: 'pyOpenSSL-0.11' }
+    - { command: 'install', dir: 'pyOpenSSL-0.11' }
+
+
+- name: Download and unpacked sabnzbd
+  unarchive:
+    src: http://downloads.sourceforge.net/project/sabnzbdplus/sabnzbdplus/0.7.20/SABnzbd-0.7.20-src.tar.gz
+    dest: /tmp/
+    copy: no
+
+- name: Copy to /opt
+  command: mv /tmp/SABnzbd-0.7.20 /opt/sabnzbd
+  args:
+    creates: /opt/sabnzbd
+
+- name: create user
+  user:
+    name: "{{ sabnzbd_user }}"
+    shell: /bin/bash
+
+- name: create several dirs
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ sabnzbd_download_dir }}"
+    - "{{ sabnzbd_download_complete_dir }}"
+    - "{{ sabnzbd_download_incomplete_dir }}"
+
+- name: change owner of the dir
+  file:
+    path: "{{ sabnzbd_home }}"
+    group: "{{  sabnzbd_user }}"
+    owner: "{{  sabnzbd_user }}"
+    recurse: yes
+
+- name: copy init.d file
+  template:
+    src: sabnzbd.j2
+    dest: /etc/rc.d/init.d/sabnzbd
+    mode: 755
+
+# Not needed yet. Let's start with empty sabnzbd
+- name: copy sabnzbd.ini file
+  template:
+    src: sabnzbd-config.ini.j2
+    dest: "{{ sabnzbd_home }}/sabnzbd.ini"
+
+- name: change defaulttty
+  lineinfile:
+    line: "Defaults !requiretty"
+    dest: /etc/sudoers
+    regexp: "^Defaults(.*)requiretty"
+    backrefs: yes
+    state: present
+
+- name: start service
+  service:
+    name: sabnzbd
+    state: started 
+    enabled: yes
+ 

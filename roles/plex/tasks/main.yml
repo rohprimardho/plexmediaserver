@@ -1,0 +1,16 @@
+---
+- name: Ensure the plex installation dir exist
+  file:
+    state: directory
+    path: /opt/plex 
+
+- name: install plex
+  yum:
+    name: "{{ plex_rpm_url }}"
+    state: present
+
+- name: enable and start the service
+  service:
+    name: plexmediaserver.service
+    state: started
+    enabled: yes   

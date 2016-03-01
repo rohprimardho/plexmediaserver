@@ -1,0 +1,45 @@
+---
+- name: clone sickbeard project
+  git:
+    repo: https://github.com/midgetspy/Sick-Beard.git
+    dest: /opt/sickbeard
+
+# I copy the whole dir locally, in case it is being taken away unnoticed.
+# But it took forever.
+#- name: copy the installation dir
+#  copy:
+#    src: sickbeard
+#    dest: /opt/
+
+- name: create sickbeard user
+  user: 
+    name: "{{ sickbeard_user }}"
+    shell: /bin/bash 
+
+- name: change owner of sickbeard dir
+  file:
+    path: /opt/sickbeard
+    owner: "{{ sickbeard_user }}"
+    group: "{{ sickbeard_user }}"
+    recurse: yes
+    state: directory
+
+- name: copy sickbeard init file
+  template:
+    src: sickbeard.init.j2
+    dest: /etc/systemd/system/sickbeard.service
+
+# Not needed yet. Let's start with empty sickbeard conf
+- name: copy sickbeard conf
+  template:
+    src: sickbeard-config.ini.j2
+    dest: "{{ sickbeard_home }}/config.ini"
+    mode: u+w
+    owner: "{{ sickbeard_user }}"
+    group: "{{ sickbeard_user }}"
+
+- name: ensure sickbeard is running and enabled
+  service: 
+    name: sickbeard 
+    state: started 
+    enabled: yes

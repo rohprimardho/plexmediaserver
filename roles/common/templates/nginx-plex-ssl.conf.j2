@@ -1,0 +1,53 @@
+#Here below is the nginx configuration when using SSL
+#Run the following commands first
+
+#---
+#sudo git clone https://github.com/letsencrypt/letsencrypt /opt/letsencrypt
+#systemctl stop nginx
+#cd /opt/letsencrypt
+#./letsencrypt-auto certonly --standalone
+#openssl dhparam -out /etc/nginx/dhparams.pem  4096
+#---
+
+# Then copy use this file to replace /etc/nginx/conf.d/plex.conf
+server {
+  listen 443 ssl;
+  server_name {{ inventory_hostname }};
+
+  ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+  ssl_prefer_server_ciphers on;
+  ssl_ciphers 'EECDH+AESGCM:EDH+AESGCM:AES256+EECDH:AES256+EDH';
+  
+  ssl_dhparam /etc/nginx/dhparams.pem;
+  ssl_certificate /etc/letsencrypt/live/{{ inventory_hostname }}/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/{{ inventory_hostname }}/privkey.pem;
+  
+  access_log      /var/log/nginx/access.log;
+  error_log       /var/log/nginx/error.log debug;
+
+  location / {
+        proxy_pass http://{{ inventory_hostname }}/web;
+    }
+
+  location /web {
+        proxy_pass http://localhost:32400;
+    }
+
+   location /sabnzbd {
+        proxy_pass http://localhost:{{ sabnzbd_web_port }};        
+    	auth_basic "Restricted";
+    	auth_basic_user_file {{ the_password_file }};
+   }
+
+    location /sickbeard {
+        proxy_pass http://localhost:{{ sickbeard_web_port }}/sickbeard;
+	auth_basic "Restricted";
+    	auth_basic_user_file {{ the_password_file }};
+    }
+}
+
+server {
+    listen 80;
+    server_name {{ inventory_hostname }};
+    return 301 https://$host$request_uri;
+}

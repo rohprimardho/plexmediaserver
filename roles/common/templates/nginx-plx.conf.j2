@@ -1,0 +1,27 @@
+server {
+  listen 80;
+  server_name {{ inventory_hostname }};
+
+  access_log      /var/log/nginx/access.log;
+  error_log       /var/log/nginx/error.log debug;
+
+  location / {
+	return 301 http://{{ inventory_hostname }}/web;
+    }
+
+  location /web {
+        proxy_pass http://localhost:32400;
+    }
+
+   location /sabnzbd {
+        proxy_pass http://localhost:{{ sabnzbd_web_port }};        
+        auth_basic "Restricted";
+        auth_basic_user_file {{ the_password_file }};
+   }
+
+    location /sickbeard {
+        proxy_pass http://localhost:{{ sickbeard_web_port }}/sickbeard;
+        auth_basic "Restricted";
+        auth_basic_user_file {{ the_password_file }};
+    }
+}

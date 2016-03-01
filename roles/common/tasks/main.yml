@@ -1,0 +1,79 @@
+---
+- name: installing epel
+  yum:
+    name: epel-release
+    state: present
+
+- name: copy unrar installation file
+  copy:
+    src: unrar-4.0.7-1.el6.rf.x86_64.rpm
+    dest: /tmp/unrar-4.0.7-1.el6.rf.x86_64.rpm
+
+- name: installing unrar
+  yum:
+    name: /tmp/unrar-4.0.7-1.el6.rf.x86_64.rpm #name: http://pkgs.repoforge.org/unrar/unrar-4.0.7-1.el6.rf.x86_64.rpm
+    state: present
+
+- name: installing common applications
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - vim
+    - python-cheetah 
+    - gcc 
+    - gcc-c++ 
+    - par2cmdline 
+    - openssl 
+    - gzip 
+    - bzip2 
+    - unzip 
+    - pyOpenSSL 
+    - git
+    - libgcc 
+    - make 
+    - cmake
+    - python 
+    - python-libs 
+    - python-configobj 
+    - python-pycurl 
+    - python-pyudev 
+    - python-setuptools 
+    - python-devel 
+    - python-tools
+    - python-feedparser
+    - openssl-devel 
+    - openssl-libs
+    - httpd-tools
+- name: install nginx
+  yum:
+    name: nginx
+    state: present
+
+- name: create dirs 
+  file: 
+    path: "{{ item }}"
+    state: directory 
+    mode: 0755
+    owner: "{{ running_user }}"
+    group: "{{ running_user }}"
+  with_items:
+    - "/media/film"
+    - "/media/tv"
+
+- name: copy nginx installation file
+  template:
+    src: nginx-plx.conf.j2
+    dest: /etc/nginx/conf.d/nginx.conf
+  notify:
+    - restart nginx
+
+- name: create password file
+  shell: "htpasswd -bc {{ the_password_file }} {{ the_user }} {{ the_password }}"
+  notify:
+    - restart nginx
+
+- name: copy the ssl-example pass file
+  template:
+    src: nginx-plex-ssl.conf.j2
+    dest: /etc/nginx/conf.d/nginx.conf-ssl
